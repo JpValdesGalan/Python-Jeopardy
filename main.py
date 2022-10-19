@@ -1,14 +1,22 @@
-import numpy as np
+import random
 import pandas as pd
 import os
 
-board = [['600', '600', '600', '600', '600', '600'],
+board =[['600', '600', '600', '600', '600', '600'],
         ['500', '500', '500', '500', '500', '500'],
         ['400', '400', '400', '400', '400', '400'],
         ['300', '300', '300', '300', '300', '300'],
         ['200', '200', '200', '200', '200', '200'],
         ['100', '100', '100', '100', '100', '100']]
-    
+
+def generate_random_board ():
+    ''' Genera una lista con numeros del 1-36 acomodados de manera aleatoria para que el tablero sea diferente cada juego'''
+    random_board = []
+    for i in range(36):
+        random_board.append(i)
+    random.shuffle(random_board)
+    return random_board
+
 def print_board (board):
     ''' Imprime el tablero del juego '''
     count = 0
@@ -24,7 +32,21 @@ def print_board (board):
         count += 1
         print()
     print()
-
+    
+def init_teams():
+    ''' Pedimos a los jugadores el nombre de cada equipo y retornamos su nombre y sus puntos en 0 de ambos equipos '''
+    # Pedimos nombre de cada jugador/equipo
+    os.system('cls')
+    name = input('Introduce Team 1 name: ')
+    team1_name = name
+    name = input('Introduce Team 2 name: ')
+    team2_name = name
+    os.system('cls')
+    # Inicializamos puntos de cada equipo
+    team1_points = 0
+    team2_points = 0
+    return team1_name, team1_points, team2_name, team2_points
+    
 def read_input():
     ''' Lee el input que el usuario introduce '''
     # Preguntamos por input de linea
@@ -45,13 +67,23 @@ def read_input():
         input_column = input('Introduce Column (0-5): ')
         os.system('cls')
 
-    if input_column == 0:
-        input_idx = (int(input_row)*6) + (int(input_column))
-    else:
-        input_idx = (int(input_row)*6) + (int(input_column)+1)
+    input_idx = (int(input_row)*6) + (int(input_column))
 
     return input_row, input_column, input_idx
 
+def question_screen():
+    # Imprimimos pantalla de pregunta
+    print(f'ITS {team_name} TURN\n')
+    print(question,'\n')
+    # Leemos resultado
+    result = input('Answer: ')
+    os.system('cls')
+    while result.isdigit() != True:
+        print(f'ITS {team_name} TURN')
+        print(question)
+        result = input()
+        os.system('cls')
+    return result
 
 def change_board (board, inp_row, inp_column):
     ''' Cambia el valor que se muestra del tablero por una x '''
@@ -61,60 +93,55 @@ def change_random_board(random_board, indx):
     ''' Cambia el valor que tiene la lista de random_board por null '''
     random_board[indx] = -1
 
-class Team:
-    def __init__ (self, name='', points=0):
-        ''' Constructor de Team '''
-        self.name = name
-        self.points = points
-    
-    def __str__ (self):
-        ''' Regresa string de Team '''
-        return f'{self.name}\nPoints: {self.points}'
-
-    def add_points (self, points):
-        self.points += points
-
 def print_screen():
-    print(team1)
-    print(team2)
+    print('Team:', team1_name)
+    print('Points: ', team1_points)
+    print('Team:', team2_name)
+    print('Points: ', team2_points)
     print_board(board)
-    print(f'ITS {team.name} TURN')
+    print(f'ITS {team_name} TURN')
+    
+def exit_game():
+    exit_input = input('Press ENTER to Continue\t\tExit (0)')
+    os.system('cls')
+    if exit_input == '0':
+        if team1_points > team2_points:
+            print(f'The winner is {team1_name}!\nWith {team1_points} points')
+        elif team2_points > team1_points:
+            print(f'The winner is {team2_name}!\nWith {team2_points} points')
+        else:
+            print('Draw')
+        return False
+    else:
+        return True
 
 if __name__ == '__main__':
     # jeopardy.csv contiene las preguntas del jeopardy
     # Cargamos el cv y convertimos a dictionario
-    filename = 'jeopardy.csv'
-    questions = pd.read_csv(filename, ).to_dict('index')
+    filename = 'jeopardy.xlsx'
+    questions = pd.read_excel(filename).to_dict('index')
     
+    # Inicializamos flags para el juego y equipos
     game_flag = True    # True sigue el juego
     team_flag = True    # True = Team1 | False = Team2
 
     # Generamos nuestro board con preguntas random
-    random_board = np.array(np.arange(0, 36))
-    np.random.shuffle(random_board)
-    print(random_board)
+    random_board = generate_random_board()
 
-    # Pedimos nombre de cada jugador/equipo
-    name = input('Introduce Team 1 name: ')
-    team1 = Team(name, 0)
-    os.system('cls')
-    name = input('Introduce Team 2 name: ')
-    team2 = Team(name, 0)
-    os.system('cls')
+    # Init Teams
+    team1_name, team1_points, team2_name, team2_points = init_teams()
 
     # Inicia Juego
     while game_flag == True:
 
         # Asignamos el equipo de la ronda
-        if team_flag == True:
-            team = team1
-        else:
-            team = team2
+        if team_flag == True: team_name = team1_name
+        else: team_name = team2_name
 
         # Llama a funcion que lee el input y lo guarda en estas variables
         input_row, input_column, input_idx = read_input()
 
-        # Convertimos nuestro index de matriz a lista
+        # Con el indice que nos indico el usuario saber cual es la casilla que eligio
         game_tile = random_board[input_idx]
 
         # Verificamos que no sea en una celda en la que ya se gano
@@ -130,42 +157,24 @@ if __name__ == '__main__':
         question = questions[game_tile]['Question']
         answer = str(questions[game_tile]['Answer'])
 
-        # Imprimimos pantalla de pregunta
-        print(f'ITS {team.name} TURN\n')
-        print(question)
-
-        # Leemos resultado
-        result = input()
-        os.system('cls')
-        while result.isdigit() != True:
-            print(f'ITS {team.name} TURN')
-            print(question)
-            result = input()
-            os.system('cls')
+        # Pantalla de pregunta
+        result = question_screen()
 
         # Comparamos input del usuario con la respuesta
         if result == answer:
             print('CORRECT ANSWER! :D')
             change_board(board, int(input_row), int(input_column))
             change_random_board(random_board, int(input_idx))
-            team.add_points(points)
+            if team_flag == True:
+                team1_points += points
+            else:
+                team2_points += points
         else:
             print('INCORRECT ANSWER :(')
-
-        exit_game = input('Press ENTER to Continue\tExit (0)')
-        os.system('cls')
-
-        # Salir del juego
-        if exit_game == '0':
-            if team1.points > team2.points:
-                print(f'The winner is {team1.name}!\nWith {team1.points} points')
-            elif team2.points > team1.points:
-                print(f'The winner is {team2.name}!\nWith {team2.points} points')
-            else:
-                print('Draw')
-            game_flag = False
-        
-        # [game_tile]['Question'] == Pregunta
-        # [game_tile]['Answer'] == Respuesta
+            
+        # Cambiar de equipo ya que termino el turno
         if team_flag == True: team_flag = False
         else: team_flag = True
+
+        # Salir del juego
+        game_flag = exit_game()
